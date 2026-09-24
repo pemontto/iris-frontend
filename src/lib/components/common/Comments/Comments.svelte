@@ -53,18 +53,45 @@
 						<SquarePenIcon size="12" />
 					</button>
 
-					<button
-						class="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-red-500"
-						onclick={() => onDelete(comment.comment_id)}
-					>
-						<Trash2Icon size="12" />
-					</button>
+					{#if !comment.comment_is_immutable}
+						<button
+							class="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-red-500"
+							onclick={() => onDelete(comment.comment_id)}
+						>
+							<Trash2Icon size="12" />
+						</button>
+					{/if}
 				</div>
 			</div>
 
 			<div class="mt-1.5 pl-8 text-xs [&_.prose]:text-xs">
 				<MarkDownPreview markdown={comment.comment_text} />
 			</div>
+
+			{#if comment.comment_revisions?.length}
+				<details class="ml-8 mt-2 text-2xs text-muted-foreground">
+					<summary class="cursor-pointer"
+						>Edited · {comment.comment_revisions.length} previous {comment.comment_revisions
+							.length === 1
+							? 'version'
+							: 'versions'}</summary
+					>
+					<ol class="mt-2 flex flex-col gap-2 border-l pl-3">
+						{#each comment.comment_revisions as revision, index}
+							<li>
+								<div class="mb-1">
+									Version {index + 1}{revision.user_name ? ` · ${revision.user_name}` : ''} · {new Date(
+										revision.comment_date
+									).toLocaleString()}
+								</div>
+								<div class="text-xs [&_.prose]:text-xs">
+									<MarkDownPreview markdown={revision.comment_text ?? ''} />
+								</div>
+							</li>
+						{/each}
+					</ol>
+				</details>
+			{/if}
 		</li>
 	{/each}
 </ul>

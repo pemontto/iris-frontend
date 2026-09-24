@@ -34,6 +34,13 @@ export interface Comment {
 	comment_uuid: string;
 	name: string;
 	user: UserInfo;
+	comment_is_immutable?: boolean;
+	comment_revisions?: Array<{
+		comment_text: string | null;
+		comment_date: string;
+		user_id?: number;
+		user_name?: string;
+	}>;
 }
 
 export class CommentsService {
