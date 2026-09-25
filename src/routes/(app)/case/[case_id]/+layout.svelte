@@ -123,6 +123,13 @@
 	setContext<DatastorePanelContext>(DATASTORE_PANEL_CTX, datastorePanel);
 
 	const currentCase = $derived<Case | null>(cases.currentCase() ?? null);
+	const requestedCaseId = $derived(Number(page.params.case_id));
+	const caseLookupFinished = $derived(
+		cases.list.status !== 'loading' &&
+			Array.isArray(cases.list.params.case_ids) &&
+			cases.list.params.case_ids.length === 1 &&
+			cases.list.params.case_ids[0] === requestedCaseId
+	);
 
 	let hookOptions = $state<HookOption[]>([]);
 	let showRequestReview = $state(false);
@@ -408,7 +415,15 @@
 	{/if}
 {/snippet}
 
-{#if !currentCase}
+{#if !currentCase && caseLookupFinished}
+	<div class="flex h-full flex-col items-start justify-center gap-3 p-8">
+		<h1 class="text-xl font-semibold">Case unavailable</h1>
+		<p class="text-muted-foreground">
+			Case #{requestedCaseId} does not exist or you do not have access to it.
+		</p>
+		<a class="text-primary underline" href="/cases">Browse accessible cases</a>
+	</div>
+{:else if !currentCase}
 	<div class="flex flex-col overflow-hidden">
 		<div class="flex items-start gap-y-1 overflow-y-auto border-b p-4 shadow">
 			<div class="mb-2 flex w-full flex-col items-start">
