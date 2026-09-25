@@ -19,7 +19,7 @@
 		WaypointsIcon
 	} from 'lucide-svelte';
 	import { page } from '$app/state';
-	import { APP_CTX, type AppContext } from '$lib/contexts/app.context.svelte';
+	import { CASES_CTX, type CasesContext } from '$lib/contexts/cases.context.svelte';
 	import { USER_CTX, type UserCtx } from '$lib/contexts/user-context.context.svelte';
 	import type { PermissionName } from '$lib/services/user-context.service';
 	import MenuItem from './MenuItem.svelte';
@@ -31,10 +31,13 @@
 
 	let { collapsed }: Props = $props();
 
-	const app = getContext<AppContext>(APP_CTX);
+	const cases = getContext<CasesContext>(CASES_CTX);
 	const userCtx = getContext<UserCtx>(USER_CTX);
 
-	const currentCaseID = $derived(app.state.currentCaseID);
+	// The stored last case ID may be inaccessible to this user (or belong
+	// to another account). Only offer a direct case link after its record
+	// has actually loaded through this user's case access.
+	const currentCaseID = $derived(cases.currentCase()?.case_id ?? null);
 	const pathname = $derived(page.url.pathname);
 	const hash = $derived(page.url.hash);
 
@@ -73,7 +76,9 @@
 	// the user is still inside the case context whether they're on
 	// `/case/42`, `/case/42/notes`, `/case/42/timeline`, etc.
 	const investigationMenuItems = $derived<NavItem[]>([
-		{ label: 'Case', path: `/case/${currentCaseID}`, icon: WaypointsIcon, matchPrefix: true },
+		...(currentCaseID !== null
+			? [{ label: 'Case', path: `/case/${currentCaseID}`, icon: WaypointsIcon, matchPrefix: true }]
+			: []),
 		{
 			label: 'Alerts',
 			path: '/alerts',
