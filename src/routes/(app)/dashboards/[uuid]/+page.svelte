@@ -4,6 +4,7 @@
   KPI tiles. System dashboards hide the Edit button.
 -->
 <script lang="ts">
+	import { apiErrorMessage } from '$lib/utils/error-handler';
 	import {
 		fromDateTimeInputValue,
 		toDateTimeInputValue,
@@ -116,7 +117,7 @@
 			widgets = response.data.widgets;
 			renderedSections = response.data.sections ?? [];
 		} else {
-			error = response.error?.message ?? 'Failed to render dashboard.';
+			error = apiErrorMessage(response, 'Failed to render dashboard.');
 		}
 	}
 

@@ -4,6 +4,7 @@
   dashboards short-circuit back to view-mode.
 -->
 <script lang="ts">
+	import { apiErrorMessage } from '$lib/utils/error-handler';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { flip } from 'svelte/animate';
@@ -589,7 +590,7 @@
 		if (response.ok) {
 			success = 'Saved.';
 		} else {
-			error = response.error?.message ?? 'Failed to save dashboard.';
+			error = apiErrorMessage(response, 'Failed to save dashboard.');
 		}
 		saving = false;
 	}

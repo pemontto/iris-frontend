@@ -5,6 +5,7 @@
   so it doesn't eat editor screen space when not needed.
 -->
 <script lang="ts">
+	import { apiErrorMessage } from '$lib/utils/error-handler';
 	import { formatTime } from '$lib/utils/time-formatter';
 	import { ChevronDownIcon, ChevronUpIcon, RefreshCwIcon } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -56,7 +57,7 @@
 				sections = response.data.sections ?? [];
 				lastRenderedAt = formatTime(Date.now());
 			} else {
-				error = response.error?.message ?? 'Render failed.';
+				error = apiErrorMessage(response, 'Render failed.');
 			}
 		} catch (e) {
 			error = (e as Error).message;

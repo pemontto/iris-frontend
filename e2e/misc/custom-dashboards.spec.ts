@@ -125,3 +125,54 @@ test.describe('Custom dashboards · UI', () => {
 		}
 	});
 });
+
+test.describe('Custom dashboards · request errors', () => {
+	for (const operation of ['render', 'save', 'preview'] as const) {
+		test(`${operation} failure shows the server message`, async ({ page }) => {
+			const api = await adminApi();
+			let uuid: string | undefined;
+			const message =
+				operation === 'save' ? 'Dashboard save rejected.' : 'Invalid dashboard definition.';
+
+			try {
+				const create = await api.post(DASH_BASE, {
+					data: minimalDashboard(rand('dash-error'))
+				});
+				const dash = await apiJson<{ dashboard_uuid: string }>(create);
+				uuid = dash.dashboard_uuid;
+				expect(create.ok()).toBeTruthy();
+				await login(page);
+				const endpoint = `${DASH_BASE}/${uuid}${operation === 'save' ? '' : '/render'}`;
+				await page.route(`**${endpoint}`, async (route) => {
+					const method = operation === 'save' ? 'PUT' : 'POST';
+					if (route.request().method() !== method) {
+						await route.continue();
+						return;
+					}
+					await route.fulfill({
+						status: 400,
+						json: {
+							message,
+							data: { widgets: ['At least one widget must be defined.'] }
+						}
+					});
+				});
+				await page.goto(`/dashboards/${uuid}${operation === 'render' ? '' : '/edit'}`);
+				if (operation === 'save') {
+					await expect(page.getByLabel('Name', { exact: true })).not.toHaveValue('');
+					await page.getByRole('button', { name: 'Save', exact: true }).click();
+				}
+				await expect(page.getByText(message, { exact: true })).toBeVisible();
+			} finally {
+				try {
+					if (uuid) {
+						const deleted = await api.delete(`${DASH_BASE}/${uuid}`);
+						expect(deleted.ok()).toBeTruthy();
+					}
+				} finally {
+					await api.dispose();
+				}
+			}
+		});
+	}
+});
