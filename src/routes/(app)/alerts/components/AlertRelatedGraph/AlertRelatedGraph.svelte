@@ -21,6 +21,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { openAlertPivot } from '$lib/utils/alert-pivot';
 	import { AlertRelationshipsFilters, defaultAlertRelationshipsFilters } from '.';
+	import { projectRelatedGraph } from './related-graph-projection';
 
 	type ContextMenuState = {
 		open: boolean;
@@ -137,8 +138,10 @@
 		load();
 	});
 
+	const displayedGraph = $derived(projectRelatedGraph(graph, filters));
+
 	const nodes = $derived(
-		graph.nodes.map((node) => {
+		displayedGraph.nodes.map((node) => {
 			const font = {
 				color: strokeColor
 			};
@@ -196,7 +199,7 @@
 		}) as VisNode[]
 	);
 
-	const edges = $derived(graph.edges as VisEdge[]);
+	const edges = $derived(displayedGraph.edges as VisEdge[]);
 
 	const closeContextMenu = () => (contextMenu = { open: false, x: 0, y: 0 });
 
@@ -256,7 +259,7 @@
 </div>
 
 <div class="relative h-[32rem] w-full rounded-md border bg-muted/20">
-	{#if graph.nodes.length}
+	{#if displayedGraph.nodes.length}
 		<VisNetwork
 			{nodes}
 			{edges}
@@ -307,7 +310,7 @@
 		<div class="absolute inset-0 flex items-center justify-center text-sm text-red-500">
 			{error}
 		</div>
-	{:else if !graph.nodes.length}
+	{:else if !displayedGraph.nodes.length}
 		<div class="absolute inset-0 flex items-center justify-center text-sm opacity-70">
 			No related entities found.
 		</div>
