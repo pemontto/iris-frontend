@@ -587,7 +587,8 @@
 		if (response.ok) {
 			success = 'Saved.';
 		} else {
-			error = response.error?.message ?? 'Failed to save dashboard.';
+			const data = response.data as { message?: string } | null;
+			error = data?.message ?? response.error?.message ?? 'Failed to save dashboard.';
 		}
 		saving = false;
 	}

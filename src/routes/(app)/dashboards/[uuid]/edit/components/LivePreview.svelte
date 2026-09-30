@@ -56,7 +56,8 @@
 				sections = response.data.sections ?? [];
 				lastRenderedAt = formatTime(Date.now());
 			} else {
-				error = response.error?.message ?? 'Render failed.';
+				const data = response.data as { message?: string } | null;
+				error = data?.message ?? response.error?.message ?? 'Render failed.';
 			}
 		} catch (e) {
 			error = (e as Error).message;

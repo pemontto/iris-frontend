@@ -115,7 +115,8 @@
 			widgets = response.data.widgets;
 			renderedSections = response.data.sections ?? [];
 		} else {
-			error = response.error?.message ?? 'Failed to render dashboard.';
+			const data = response.data as { message?: string } | null;
+			error = data?.message ?? response.error?.message ?? 'Failed to render dashboard.';
 		}
 	}
 
