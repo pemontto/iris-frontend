@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import { mode } from 'mode-watcher';
 	import DOMPurify from 'dompurify';
 	import type { IdType, Options } from 'vis-network';
@@ -22,6 +22,13 @@
 	import { openAlertPivot } from '$lib/utils/alert-pivot';
 	import { AlertRelationshipsFilters, defaultAlertRelationshipsFilters } from '.';
 	import { projectRelatedGraph } from './related-graph-projection';
+	import AlertRelationshipsTable from './AlertRelationshipsTable.svelte';
+	import {
+		readRelationshipPreferences,
+		writeRelationshipPreferences,
+		type RelationshipPlacement
+	} from './relationship-preferences';
+	import type { RelatedEntitySort } from './related-graph-rows';
 
 	type ContextMenuState = {
 		open: boolean;
@@ -45,9 +52,11 @@
 	};
 
 	let {
-		alertId
+		alertId,
+		placement = 'detail'
 	}: {
 		alertId: number;
+		placement?: RelationshipPlacement;
 	} = $props();
 
 	const alerts = getContext<AlertsContext>(ALERTS_CTX);
@@ -69,6 +78,22 @@
 	let graph = $state<RelatedAlert>({ nodes: [], edges: [] });
 
 	let filters = $state(defaultAlertRelationshipsFilters());
+	let view = $state<'graph' | 'table'>('graph');
+	let sort = $state<RelatedEntitySort>(null);
+	onMount(() => {
+		const saved = readRelationshipPreferences(placement);
+		view = saved.view;
+		sort = saved.sort;
+	});
+	const selectView = (next: typeof view) => {
+		view = next;
+		closeContextMenu();
+		writeRelationshipPreferences(placement, { view, sort });
+	};
+	const selectSort = (next: RelatedEntitySort) => {
+		sort = next;
+		writeRelationshipPreferences(placement, { view, sort });
+	};
 
 	let contextMenu = $state<ContextMenuState>({
 		open: false,
@@ -254,11 +279,38 @@
 	};
 </script>
 
-<div class="mb-4 flex">
+<div class="mb-4 flex flex-wrap items-start justify-between gap-4">
 	<AlertRelationshipsFilters bind:value={filters} />
+	<div role="group" aria-label="Relationships view" class="flex gap-1">
+		{#each ['graph', 'table'] as mode}
+			<Button
+				type="button"
+				size="xs"
+				variant={view === mode ? 'default' : 'outline'}
+				aria-pressed={view === mode}
+				onclick={() => selectView(mode as typeof view)}
+			>
+				{mode === 'graph' ? 'Graph' : 'Table'}
+			</Button>
+		{/each}
+	</div>
 </div>
 
-<div class="relative h-[32rem] w-full rounded-md border bg-muted/20">
+{#if view === 'table'}
+	<AlertRelationshipsTable
+		graph={displayedGraph}
+		{alertId}
+		refreshing={loading}
+		{error}
+		{sort}
+		onSortChange={selectSort}
+	/>
+{/if}
+
+<div
+	class="relative h-[32rem] w-full rounded-md border bg-muted/20"
+	class:hidden={view === 'table'}
+>
 	{#if displayedGraph.nodes.length}
 		<VisNetwork
 			{nodes}
