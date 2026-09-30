@@ -21,6 +21,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { openAlertPivot } from '$lib/utils/alert-pivot';
 	import { AlertRelationshipsFilters, defaultAlertRelationshipsFilters } from '.';
+	import { projectRelatedGraph } from './related-graph-projection';
 
 	type ContextMenuState = {
 		open: boolean;
@@ -78,12 +79,14 @@
 		y: 0
 	});
 
+	const displayedGraph = $derived(projectRelatedGraph(graph, filters));
+
 	// Remount the network for every new data set and theme. Freezing is
 	// tied to `stabilizationIterationsDone`, which only fires for the
 	// stabilization run at construction — fresh data fed into a live,
 	// frozen network would never be laid out, and a theme change rebuilds
 	// every node (see `VisNetwork`), dropping their positions.
-	const layoutKey = $derived({ graph, isDark });
+	const layoutKey = $derived({ graph: displayedGraph, isDark });
 	// The `layoutKey` whose layout has settled; see `options.physics`. Raw:
 	// a deep `$state` would proxy the key and never equal `layoutKey` again.
 	let frozenKey = $state.raw<object | null>(null);
@@ -158,7 +161,7 @@
 	});
 
 	const nodes = $derived(
-		graph.nodes.map((node) => {
+		displayedGraph.nodes.map((node) => {
 			const font = {
 				color: strokeColor
 			};
@@ -216,7 +219,7 @@
 		}) as VisNode[]
 	);
 
-	const edges = $derived(graph.edges as VisEdge[]);
+	const edges = $derived(displayedGraph.edges as VisEdge[]);
 
 	const handleReady = (network: Network | null) => {
 		const key = layoutKey;
@@ -292,7 +295,7 @@
 			fill ? 'min-h-[24rem] flex-1' : 'h-[32rem]'
 		]}
 	>
-		{#if graph.nodes.length}
+		{#if displayedGraph.nodes.length}
 			{#key layoutKey}
 				<VisNetwork
 					{nodes}
@@ -346,7 +349,7 @@
 			<div class="absolute inset-0 flex items-center justify-center text-sm text-red-500">
 				{error}
 			</div>
-		{:else if !graph.nodes.length}
+		{:else if !displayedGraph.nodes.length}
 			<div class="absolute inset-0 flex items-center justify-center text-sm opacity-70">
 				No related entities found.
 			</div>
