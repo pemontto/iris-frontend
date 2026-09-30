@@ -50,4 +50,83 @@ describe('CaseSeveritiesService', () => {
 		expect(ApiService.get).toHaveBeenCalledWith(urlWithQuery, options);
 		expect(res).toBe(mockResponse);
 	});
+
+	it.each(['paginated', 'flat'])('list() sorts %s severities in canonical order', async (shape) => {
+		const severities = ['Medium', 'Unspecified', 'Informational', 'Low', 'High', 'Critical'].map(
+			(severity_name, index) => ({
+				severity_id: index + 1,
+				severity_name,
+				severity_description: `${severity_name} severity`
+			})
+		);
+		const expected = [
+			severities[1],
+			severities[2],
+			severities[3],
+			severities[0],
+			severities[4],
+			severities[5]
+		];
+		const mockResponse = {
+			ok: true,
+			status: 200,
+			data: shape === 'flat' ? severities : { total: 6, data: severities, current_page: 1 }
+		};
+		vi.mocked(ApiService.get).mockResolvedValueOnce(mockResponse);
+
+		const res = await SeveritiesService.list();
+		const body = res.data as unknown as Severity[] | { data: Severity[] };
+
+		expect(Array.isArray(body) ? body : body.data).toEqual(expected);
+		expect(res).toBe(mockResponse);
+	});
+
+	it('list() keeps custom severities after known severities in API order', async () => {
+		const severities = ['Custom Z', 'Critical', 'Custom A', 'Unspecified'].map(
+			(severity_name, index) => ({
+				severity_id: index + 1,
+				severity_name,
+				severity_description: ''
+			})
+		);
+		vi.mocked(ApiService.get).mockResolvedValueOnce({ status: 200, data: { data: severities } });
+
+		const res = await SeveritiesService.list();
+		const body = res.data as unknown as { data: Severity[] };
+
+		expect(body.data.map((s) => s.severity_name)).toEqual([
+			'Unspecified',
+			'Critical',
+			'Custom Z',
+			'Custom A'
+		]);
+	});
+
+	it('list() matches severity names case-insensitively and trims whitespace', async () => {
+		const severities = [
+			'cRiTiCaL',
+			'  LOW  ',
+			'UNSPECIFIED',
+			'Medium',
+			'informational',
+			'high'
+		].map((severity_name, index) => ({
+			severity_id: index + 1,
+			severity_name,
+			severity_description: ''
+		}));
+		vi.mocked(ApiService.get).mockResolvedValueOnce({ status: 200, data: { data: severities } });
+
+		const res = await SeveritiesService.list();
+		const body = res.data as unknown as { data: Severity[] };
+
+		expect(body.data.map((s) => s.severity_name)).toEqual([
+			'UNSPECIFIED',
+			'informational',
+			'  LOW  ',
+			'Medium',
+			'high',
+			'cRiTiCaL'
+		]);
+	});
 });
