@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { getContext, untrack } from 'svelte';
+	import { browser } from '$app/environment';
 	import { mode } from 'mode-watcher';
 	import DOMPurify from 'dompurify';
 	import type { IdType, Network, Options } from 'vis-network';
@@ -22,6 +23,12 @@
 	import { openAlertPivot } from '$lib/utils/alert-pivot';
 	import { AlertRelationshipsFilters, defaultAlertRelationshipsFilters } from '.';
 	import { projectRelatedGraph } from './related-graph-projection';
+	import AlertRelationshipsTable from './AlertRelationshipsTable.svelte';
+	import {
+		readRelationshipView,
+		writeRelationshipView,
+		type RelationshipPlacement
+	} from './relationship-view-preference';
 
 	type ContextMenuState = {
 		open: boolean;
@@ -46,11 +53,13 @@
 
 	let {
 		alertId,
-		fill = false
+		fill = false,
+		placement = 'detail'
 	}: {
 		alertId: number;
 		/** Stretch the canvas to the parent's height instead of a fixed 32rem. */
 		fill?: boolean;
+		placement?: RelationshipPlacement;
 	} = $props();
 
 	const alerts = getContext<AlertsContext>(ALERTS_CTX);
@@ -72,6 +81,15 @@
 	let graph = $state<RelatedAlert>({ nodes: [], edges: [] });
 
 	let filters = $state(defaultAlertRelationshipsFilters());
+	// Read once before rendering; storage is unavailable during SSR.
+	let view = $state(untrack(() => (browser ? readRelationshipView(placement) : 'graph')));
+	const selectView = (next: typeof view) => {
+		// Returning to Graph starts a fresh layout through the existing physics option.
+		if (next === 'graph' && view === 'table') frozenKey = null;
+		view = next;
+		closeContextMenu();
+		writeRelationshipView(placement, view);
+	};
 
 	let contextMenu = $state<ContextMenuState>({
 		open: false,
@@ -285,17 +303,35 @@
 </script>
 
 <div class={fill ? 'flex h-full min-h-0 flex-col' : 'contents'}>
-	<div class="mb-4 flex">
+	<div class="mb-4 flex flex-wrap items-start justify-between gap-4">
 		<AlertRelationshipsFilters bind:value={filters} />
+		<div role="group" aria-label="Relationships view" class="flex gap-1">
+			{#each ['graph', 'table'] as viewMode}
+				<Button
+					type="button"
+					size="xs"
+					variant={view === viewMode ? 'default' : 'outline'}
+					aria-pressed={view === viewMode}
+					onclick={() => selectView(viewMode as typeof view)}
+				>
+					{viewMode === 'graph' ? 'Graph' : 'Table'}
+				</Button>
+			{/each}
+		</div>
 	</div>
+
+	{#if view === 'table'}
+		<AlertRelationshipsTable graph={displayedGraph} {alertId} refreshing={loading} {error} />
+	{/if}
 
 	<div
 		class={[
 			'relative w-full rounded-md border bg-muted/20',
 			fill ? 'min-h-[24rem] flex-1' : 'h-[32rem]'
 		]}
+		class:hidden={view === 'table'}
 	>
-		{#if displayedGraph.nodes.length}
+		{#if view === 'graph' && displayedGraph.nodes.length}
 			{#key layoutKey}
 				<VisNetwork
 					{nodes}
