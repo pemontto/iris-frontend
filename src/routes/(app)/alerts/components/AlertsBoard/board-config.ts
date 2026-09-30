@@ -6,6 +6,8 @@
  * dependencies) into the list view's bundle.
  */
 
+export { SEVERITY_RANK, rankOf } from '$lib/utils/severity';
+
 /** Which lookup the board lays its columns out by. */
 export type AlertBoardGroup = 'severity' | 'status';
 
@@ -48,15 +50,6 @@ export const UNASSIGNED_OWNER_ID = -1;
  * after the seeded entries but before `Unspecified`, which always
  * trails.
  */
-export const SEVERITY_RANK: Readonly<Record<string, number>> = {
-	critical: 0,
-	high: 10,
-	medium: 20,
-	low: 30,
-	informational: 40,
-	unspecified: 90
-};
-
 export const SEVERITY_COLOR: Readonly<Record<string, string>> = {
 	critical: 'red',
 	high: 'orange',
@@ -81,7 +74,3 @@ export const STATUS_COLOR: Readonly<Record<string, string>> = {
 	pending: 'yellow',
 	unspecified: 'gray'
 };
-
-/** Rank for a lookup name, with unknown entries parked before `Unspecified`. */
-export const rankOf = (ranks: Readonly<Record<string, number>>, name: string): number =>
-	ranks[name.toLowerCase().trim()] ?? 50;

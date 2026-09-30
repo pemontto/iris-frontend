@@ -1,5 +1,6 @@
 import { ApiService } from './api.service';
 import type { ApiOptions, RequestResponse } from './api.service';
+import { SEVERITY_RANK, rankOf } from '$lib/utils/severity';
 
 export type SeverityIdentifier = number;
 
@@ -20,6 +21,18 @@ export class SeveritiesService {
 		// silently truncate severity dropdowns on deployments with
 		// custom severities.
 		const url = ApiService.withQuery('/manage/severities', { per_page: 10000 });
-		return ApiService.get<Severity[]>(url, options);
+		const res = await ApiService.get<Severity[]>(url, options);
+		const body = res.data as unknown as Severity[] | { data?: Severity[] } | null;
+		const severities = Array.isArray(body) ? body : body?.data;
+		if (Array.isArray(severities)) {
+			// Reverse the board ranks for least-to-most severe pickers.
+			// Equal custom ranks preserve their API order in the stable sort.
+			const pickerRank = (severity: Severity): number =>
+				Object.hasOwn(SEVERITY_RANK, severity.severity_name.toLowerCase().trim())
+					? -rankOf(SEVERITY_RANK, severity.severity_name)
+					: Number.MAX_SAFE_INTEGER;
+			severities.sort((a, b) => pickerRank(a) - pickerRank(b));
+		}
+		return res;
 	}
 }
