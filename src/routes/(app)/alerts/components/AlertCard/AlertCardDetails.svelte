@@ -205,7 +205,7 @@
 		<h4 class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 			Relationships
 		</h4>
-		<AlertRelatedGraph alertId={alert.alert_id} />
+		<AlertRelatedGraph {alert} />
 	</div>
 
 	<!-- IOCs -->

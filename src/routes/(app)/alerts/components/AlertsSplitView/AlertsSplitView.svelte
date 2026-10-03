@@ -1522,7 +1522,7 @@
 
 			{#if activeTab === 'graph'}
 				<div class="graph-pane">
-					<AlertRelatedGraph alertId={f.alert_id} fill />
+					<AlertRelatedGraph alert={f} fill placement="split" />
 				</div>
 			{:else if activeTab === 'flow'}
 				<!--
@@ -1705,7 +1705,7 @@
 								-->
 								{#key f.alert_id}
 									{#if graphRevealed[f.alert_id]}
-										<AlertRelatedGraph alertId={f.alert_id} />
+										<AlertRelatedGraph alert={f} placement="split" />
 									{:else}
 										<div class="graph-placeholder" use:revealGraph={f.alert_id}>
 											Loading relationships…
