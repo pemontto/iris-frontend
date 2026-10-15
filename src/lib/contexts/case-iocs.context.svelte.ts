@@ -187,6 +187,8 @@ export const createCaseIocsContext = (getCaseId: () => number | null) => {
 		body: UpdateCaseIocBody,
 		options: ApiOptions = {}
 	): Promise<Ioc | null> => {
+		mutation.error = null;
+
 		const caseId = getCaseId();
 
 		if (caseId === null) return null;
@@ -212,6 +214,7 @@ export const createCaseIocsContext = (getCaseId: () => number | null) => {
 			return res.data;
 		}
 
+		mutation.error = res.error?.message ?? 'Failed to update IOC';
 		await refresh(options);
 		return byId[id] ?? null;
 	};

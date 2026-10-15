@@ -410,7 +410,8 @@
 											{ custom_attributes: values },
 											{ fetch }
 										);
-										if (!updated) throw new Error('Failed to update IOC');
+										if (!updated || caseIocs.mutation.error)
+											throw new Error(caseIocs.mutation.error ?? 'Failed to update IOC');
 									}}
 								/>
 							</TabsContent>
