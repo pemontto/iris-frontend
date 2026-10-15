@@ -93,7 +93,11 @@ export const seedCustomAttributeValues = (
 	for (const [tab, fields] of Object.entries(schema)) {
 		values[tab] = {};
 		for (const [fieldName, field] of Object.entries(fields)) {
-			const previous = existing?.[tab]?.[fieldName];
+			const stored = existing?.[tab]?.[fieldName];
+			const previous =
+				stored !== null && typeof stored === 'object' && 'type' in stored && 'value' in stored
+					? stored.value
+					: stored;
 			values[tab][fieldName] = previous !== undefined ? previous : field.value;
 		}
 	}
