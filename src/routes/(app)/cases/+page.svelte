@@ -177,7 +177,7 @@
 		const [open, critical, stalled, mine] = await Promise.all([
 			countCases({ is_open: true }),
 			criticalId != null
-				? countCases({ is_open: true, severity_id: criticalId })
+				? countCases({ is_open: true, case_severity_id: criticalId })
 				: Promise.resolve(0),
 			countCases({ is_open: true, end_open_date: staleCutoff() }),
 			myUserId != null ? countCases({ is_open: true, case_owner_id: myUserId }) : Promise.resolve(0)
@@ -563,10 +563,14 @@
 			label: c.customer_name
 		}));
 
-		const states = Array.isArray(statesRes.data) ? (statesRes.data as CaseState[]) : [];
+		const statesData = statesRes.data as { data?: CaseState[] } | CaseState[] | null;
+		const states = Array.isArray(statesData) ? statesData : (statesData?.data ?? []);
 		stateOptions = states.map((s) => ({ value: s.state_name, label: s.state_name }));
 
-		const severities = Array.isArray(severitiesRes.data) ? (severitiesRes.data as Severity[]) : [];
+		const severitiesData = severitiesRes.data as { data?: Severity[] } | Severity[] | null;
+		const severities = Array.isArray(severitiesData)
+			? severitiesData
+			: (severitiesData?.data ?? []);
 		severitiesRaw = severities;
 		severityOptions = severities.map((s) => ({ value: s.severity_name, label: s.severity_name }));
 	};
